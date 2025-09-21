@@ -1,15 +1,11 @@
 pipeline {
     agent any
 
-    tools {
-        python 'Python3'
-    }
-
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/cabdaoui/Robots.git'
+                    url: 'https://github.com/cabdaoui/invoices.git'
             }
         }
 
