@@ -12,10 +12,10 @@ pipeline {
         stage('Setup Python Env') {
             steps {
                 bat '''
-                python -m venv venv
+                "C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m venv venv
                 call venv\\Scripts\\activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
+                "C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install --upgrade pip
+                "C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install -r requirements.txt
                 '''
             }
         }
@@ -24,7 +24,7 @@ pipeline {
             steps {
                 bat '''
                 call venv\\Scripts\\activate
-                python -m invoices.main
+                "C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m invoices.main
                 '''
             }
         }
