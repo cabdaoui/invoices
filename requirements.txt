@@ -2,7 +2,4 @@
 imaplib2
 pdfplumber
 openpyxl
-smtplib
-email
-logging
 
