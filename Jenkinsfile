@@ -19,7 +19,15 @@ pipeline {
                 '''
             }
         }
-
+        stage('Prepare Folders') {
+            steps {
+                 bat '''
+                 if not exist input mkdir input
+                if not exist output mkdir output
+                if not exist traitement mkdir traitement
+                 '''
+            }
+        }
         stage('Run Program') {
             steps {
                 bat '''
