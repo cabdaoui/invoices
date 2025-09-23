@@ -1,17 +1,14 @@
-﻿pipeline {
+pipeline {
   agent any
   options { timestamps() }
 
   environment {
-    // Chemin Python installé côté agent Windows (à ajuster si besoin)
     PY311 = 'C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
   }
 
   stages {
-
     stage('Checkout') {
       steps {
-        // Si repo privé : ajoute credentialsId
         git branch: 'main',
             url: 'https://github.com/cabdaoui/invoices.git',
             credentialsId: 'github-token'
@@ -30,7 +27,6 @@
 
     stage('Setup Python Env') {
       steps {
-        // On n’échoue pas le build même si l’install rate (pour rester en SUCCESS)
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
           bat """
           "%PY311%" -m venv venv
@@ -43,11 +39,8 @@
 
     stage('Run Program') {
       steps {
-        // Idem : on évite d’échouer le job
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-          bat """
-          venv\\Scripts\\python.exe -m invoices.main
-          """
+          bat "venv\\Scripts\\python.exe -m invoices.main"
         }
       }
     }
@@ -61,13 +54,11 @@
 
     stage('Archive Report') {
       steps {
-        // Si aucun .xlsx, on crée un fichier factice et on archive quand même
         bat '''
         if not exist output\\*.xlsx (
           echo No report generated>output\\no_report.txt
         )
         '''
-        // IMPORTANT : pas de findFiles -> on autorise archive vide et on passe
         archiveArtifacts artifacts: 'output/*.xlsx, output/no_report.txt',
                           fingerprint: true,
                           onlyIfSuccessful: false,
@@ -77,10 +68,10 @@
   }
 
   post {
-    // Pour être explicite : si des stages ont échoué mais catchError a intercepté, on force SUCCESS
     always {
+      // Optionnel : forcer SUCCESS même si des stages ont échoué interceptés
       script {
-        if (currentBuild.result == null || currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE') {
+        if (currentBuild.result == null || currentBuild.result in ['FAILURE','UNSTABLE']) {
           currentBuild.result = 'SUCCESS'
         }
       }
