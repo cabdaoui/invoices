@@ -1,0 +1,206 @@
+2025-09-22 15:20:08,555 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 15:20:08,557 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 15:20:10,285 - invoices_logger - ERROR - Erreur critique dans le pipeline : [Errno 2] No such file or directory: './input\\Alan 20250601 - Facture Sante pour Cherif Abdaoui.pdf'
+Traceback (most recent call last):
+  File "C:\INNOVSI\Demo\invoices_project\invoices\main.py", line 14, in main
+    pdf_files = mail_handler.fetch_invoices()
+  File "C:\INNOVSI\Demo\invoices_project\invoices\mail_handler.py", line 29, in fetch_invoices
+    with open(filepath, "wb") as f:
+         ~~~~^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: './input\\Alan 20250601 - Facture Sante pour Cherif Abdaoui.pdf'
+2025-09-22 15:20:10,290 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 15:30:10,613 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 15:30:10,614 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 15:30:10,614 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 15:30:18,086 - invoices_logger - INFO - 3 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 15:30:18,094 - invoices_logger - INFO - 3 facture(s) trouvée(s) dans ./input/.
+2025-09-22 15:30:18,095 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:30:18,295 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:30:18,295 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:30:18,485 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:30:18,485 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:30:18,671 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:30:18,671 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 15:30:18,718 - invoices_logger - INFO - Reporting généré : ./traitement\Reporting_invoices.xlsx
+2025-09-22 15:30:18,719 - invoices_logger - INFO - Envoi du reporting par mail...
+2025-09-22 15:30:20,516 - invoices_logger - INFO - Reporting envoyé avec succès ✅
+2025-09-22 15:30:20,517 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 15:34:35,866 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 15:34:35,867 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 15:34:35,867 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 15:34:42,612 - invoices_logger - INFO - 7 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 15:34:42,613 - invoices_logger - INFO - 7 facture(s) trouvée(s) dans ./input/.
+2025-09-22 15:34:42,614 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:42,719 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:42,720 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20230601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:42,910 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20230601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:42,911 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,090 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,091 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240701 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,292 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240701 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,293 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,476 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,477 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,678 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,679 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,875 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:34:43,876 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 15:34:43,877 - invoices_logger - ERROR - Erreur critique dans le pipeline : generate_excel_report() got an unexpected keyword argument 'output_path'
+Traceback (most recent call last):
+  File "C:\INNOVSI\Demo\invoices_project\invoices\main.py", line 71, in main
+    excel_file = excel_reporter.generate_excel_report(invoices_data, output_path=excel_path)
+TypeError: generate_excel_report() got an unexpected keyword argument 'output_path'
+2025-09-22 15:34:43,880 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 15:38:06,278 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 15:38:06,278 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 15:38:06,278 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 15:38:11,483 - invoices_logger - INFO - 4 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 15:38:11,483 - invoices_logger - INFO - 4 facture(s) trouvée(s) dans ./input/.
+2025-09-22 15:38:11,485 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:11,562 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:11,562 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:11,764 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:11,765 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:11,966 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:11,967 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:12,169 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:38:12,170 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 15:38:12,171 - invoices_logger - ERROR - Erreur critique dans le pipeline : generate_excel_report() got an unexpected keyword argument 'output_path'
+Traceback (most recent call last):
+  File "C:\INNOVSI\Demo\invoices_project\invoices\main.py", line 71, in main
+    excel_file = excel_reporter.generate_excel_report(invoices_data, output_path=excel_path)
+TypeError: generate_excel_report() got an unexpected keyword argument 'output_path'
+2025-09-22 15:38:12,173 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 15:55:19,316 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 15:55:19,317 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 15:55:19,317 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 15:55:24,747 - invoices_logger - INFO - 6 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 15:55:24,748 - invoices_logger - INFO - 6 facture(s) trouvée(s) dans ./input/.
+2025-09-22 15:55:24,750 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:24,850 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:24,851 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20230601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,042 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20230601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,043 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,259 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,260 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,447 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,448 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,650 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,651 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,814 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 15:55:25,815 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 15:55:25,864 - invoices_logger - INFO - Reporting généré : ./output\Reporting22_09_25.xlsx
+2025-09-22 15:55:25,864 - invoices_logger - INFO - Envoi du reporting par mail...
+2025-09-22 15:55:25,865 - invoices_logger - ERROR - Erreur critique dans le pipeline : 'EMAIL_RECIPIENT'
+Traceback (most recent call last):
+  File "C:\INNOVSI\Demo\invoices_project\invoices\main.py", line 71, in main
+    mail_sender.send_report(excel_file)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\INNOVSI\Demo\invoices_project\invoices\mail_sender.py", line 16, in send_report
+    recipient = env["EMAIL_RECIPIENT"]
+                ~~~^^^^^^^^^^^^^^^^^^^
+KeyError: 'EMAIL_RECIPIENT'
+2025-09-22 15:55:25,868 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 16:00:59,805 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 16:00:59,805 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 16:00:59,806 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 16:01:03,901 - invoices_logger - INFO - 4 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 16:01:03,903 - invoices_logger - INFO - 4 facture(s) trouvée(s) dans ./input/.
+2025-09-22 16:01:03,904 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:03,986 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:03,986 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:04,151 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:04,153 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:04,342 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:04,342 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:04,528 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:01:04,529 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 16:01:04,533 - invoices_logger - ERROR - Erreur critique dans le pipeline : [Errno 13] Permission denied: './output\\Reporting22_09_25.xlsx'
+Traceback (most recent call last):
+  File "C:\INNOVSI\Demo\invoices_project\invoices\main.py", line 66, in main
+    excel_file = excel_reporter.generate_excel_report(invoices_data)
+  File "C:\INNOVSI\Demo\invoices_project\invoices\excel_reporter.py", line 30, in generate_excel_report
+    wb.save(excel_path)
+    ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\cabda\AppData\Local\Programs\Python\Python313\Lib\site-packages\openpyxl\workbook\workbook.py", line 386, in save
+    save_workbook(self, filename)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\cabda\AppData\Local\Programs\Python\Python313\Lib\site-packages\openpyxl\writer\excel.py", line 291, in save_workbook
+    archive = ZipFile(filename, 'w', ZIP_DEFLATED, allowZip64=True)
+  File "C:\Users\cabda\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1367, in __init__
+    self.fp = io.open(file, filemode)
+              ~~~~~~~^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: './output\\Reporting22_09_25.xlsx'
+2025-09-22 16:01:04,653 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 16:01:37,743 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 16:01:37,747 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 16:01:37,750 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 16:01:40,014 - invoices_logger - INFO - Aucune nouvelle facture récupérée depuis la boîte mail.
+2025-09-22 16:01:40,015 - invoices_logger - WARNING - Aucune facture trouvée dans ./input/.
+2025-09-22 16:01:40,015 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 16:02:28,245 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 16:02:28,245 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 16:02:28,246 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 16:02:31,397 - invoices_logger - INFO - 2 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 16:02:31,398 - invoices_logger - INFO - 2 facture(s) trouvée(s) dans ./input/.
+2025-09-22 16:02:31,399 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:02:31,588 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:02:31,589 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:02:31,755 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:02:31,756 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 16:02:31,802 - invoices_logger - INFO - Reporting généré : ./output\Reporting22_09_25.xlsx
+2025-09-22 16:02:31,803 - invoices_logger - INFO - Envoi du reporting par mail...
+2025-09-22 16:02:33,876 - invoices_logger - INFO - Reporting envoyé avec succès ✅
+2025-09-22 16:02:33,877 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 16:20:34,595 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 16:20:34,596 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 16:20:34,598 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 16:20:38,131 - invoices_logger - INFO - 3 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 16:20:38,132 - invoices_logger - INFO - 3 facture(s) trouvée(s) dans ./input/.
+2025-09-22 16:20:38,133 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:20:38,211 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:20:38,212 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:20:38,398 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:20:38,398 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:20:38,600 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:20:38,600 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 16:20:38,648 - invoices_logger - INFO - Reporting généré : ./output\Reporting22_09_25.xlsx
+2025-09-22 16:20:38,649 - invoices_logger - INFO - Envoi du reporting par mail...
+2025-09-22 16:20:40,485 - invoices_logger - INFO - Reporting envoyé avec succès ✅
+2025-09-22 16:20:40,485 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 16:24:02,608 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 16:24:02,609 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 16:24:02,609 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 16:24:06,485 - invoices_logger - INFO - 4 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 16:24:06,486 - invoices_logger - INFO - 4 facture(s) trouvée(s) dans ./input/.
+2025-09-22 16:24:06,486 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:06,557 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:06,558 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:06,732 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:06,732 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:06,934 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20241201 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:06,935 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:07,123 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:24:07,123 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 16:24:07,167 - invoices_logger - INFO - Reporting généré : ./output\Reporting_22_09_25.xlsx
+2025-09-22 16:24:07,167 - invoices_logger - INFO - Envoi du reporting par mail...
+2025-09-22 16:24:08,861 - invoices_logger - INFO - Reporting envoyé avec succès ✅
+2025-09-22 16:24:08,861 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
+2025-09-22 16:32:36,346 - invoices_logger - INFO - === DÉMARRAGE DU PIPELINE FACTURES ===
+2025-09-22 16:32:36,347 - invoices_logger - INFO - Dossiers vérifiés/créés : ./input, ./traitement, ./output
+2025-09-22 16:32:36,347 - invoices_logger - INFO - Récupération des factures depuis la boîte mail...
+2025-09-22 16:32:40,136 - invoices_logger - INFO - 4 nouvelle(s) facture(s) récupérée(s) et stockée(s) dans ./input/
+2025-09-22 16:32:40,137 - invoices_logger - INFO - 4 facture(s) trouvée(s) dans ./input/.
+2025-09-22 16:32:40,137 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,239 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20230401 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,239 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,419 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240601 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,420 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,615 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20240801 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,616 - invoices_logger - INFO - Parsing de la facture : ./input\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,795 - invoices_logger - INFO - Facture déplacée dans ./traitement\Alan 20250901 - Facture Sante pour Cherif Abdaoui.pdf
+2025-09-22 16:32:40,795 - invoices_logger - INFO - Génération du fichier Excel...
+2025-09-22 16:32:40,838 - invoices_logger - INFO - Reporting généré : ./output\Reporting_22_09_25.xlsx
+2025-09-22 16:32:40,839 - invoices_logger - INFO - Envoi du reporting par mail...
+2025-09-22 16:32:42,559 - invoices_logger - INFO - Reporting envoyé avec succès ✅
+2025-09-22 16:32:42,559 - invoices_logger - INFO - === FIN DU PIPELINE FACTURES ===
