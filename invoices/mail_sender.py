@@ -39,8 +39,10 @@ def send_report(report_path):
         msg.attach(part)
 
     # Envoi via SMTP Gmail
-    with smtplib.SMTP_SSL(env["SMTP_SERVER"], env["SMTP_PORT"]) as server:
-        server.login(sender, password)
-        server.send_message(msg)
-
-    print(f"✅ Rapport envoyé à {recipient} avec pièce jointe {os.path.basename(report_path)}")
+    try:
+        with smtplib.SMTP_SSL(env["SMTP_SERVER"], env["SMTP_PORT"]) as server:
+            server.login(sender, password)
+            server.send_message(msg)
+        print(f"[OK] Rapport envoyé à {recipient} avec pièce jointe {os.path.basename(report_path)}")
+    except Exception as e:
+        print(f"[ERREUR] Impossible d'envoyer le mail : {e}")
