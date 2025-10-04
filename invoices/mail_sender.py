@@ -1,13 +1,19 @@
+﻿# mail_sender.py
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
-def send_report(excel_path: str):
-    env = load_env_config_somehow()  # ta fonction existante qui charge le JSON
+from utils import load_env_config, normalize_recipients
 
+def send_report(excel_path: str):
+    env = load_env_config()  # <-- plus d'erreur
     sender = env["EMAIL_ACCOUNT"]
-    recipients = _normalize_recipients(env)  # <-- corrige l'erreur ici
+    recipients = normalize_recipients(env)
+
+    if not recipients:
+        raise ValueError("EMAIL_RECIPIENTS is empty. Set it in env.json or environment variables.")
 
     msg = MIMEMultipart()
     msg["From"] = sender
@@ -28,12 +34,12 @@ def send_report(excel_path: str):
     app_password = env["GMAIL_APP_PASSWORD"]
 
     if smtp_port == 465:
-        # SSL direct (Gmail)
+        # SSL direct
         with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
             server.login(sender, app_password)
             server.sendmail(sender, recipients, msg.as_string())
     else:
-        # STARTTLS (ex. port 587)
+        # STARTTLS
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
             server.login(sender, app_password)
