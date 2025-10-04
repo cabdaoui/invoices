@@ -3,8 +3,6 @@ import json
 import os
 from typing import Dict, Any, List
 
-REQUIRED_KEYS = ["EMAIL_ACCOUNT", "GMAIL_APP_PASSWORD"]
-
 def _load_from_json(path: str) -> Dict[str, Any]:
     if not os.path.exists(path):
         raise FileNotFoundError(f"Config file not found: {path}")
@@ -20,7 +18,7 @@ def _load_from_environ() -> Dict[str, Any]:
     cfg = {k: os.environ.get(k) for k in keys if os.environ.get(k) is not None}
     return cfg
 
-def load_env_config(path: str = "env.json") -> Dict[str, Any]:
+def load_env_config(path: str = ".env/env.json") -> Dict[str, Any]:
     """
     Charge la config depuis env.json si présent, sinon depuis les variables d'environnement.
     Priorité au JSON si disponible.
