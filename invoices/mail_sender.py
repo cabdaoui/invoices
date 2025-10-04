@@ -1,4 +1,3 @@
-# mail_sender.py
 import os
 import smtplib
 from email.mime.text import MIMEText
@@ -14,12 +13,12 @@ def send_report(excel_path: str):
     if not os.path.exists(excel_path):
         raise FileNotFoundError(f"Fichier Excel introuvable: {excel_path}")
 
-    # 2) Config
-    env = load_env_config()  # lit ton env.json
+    # 2) Config depuis config.json
+    env = load_env_config("config.json")
     sender = env["EMAIL_ACCOUNT"]
     recipients = normalize_recipients(env)
     if not recipients:
-        raise ValueError("Aucun destinataire (EMAIL_RECIPIENTS/RECIPIENT_EMAILS).")
+        raise ValueError("Aucun destinataire (EMAIL_RECIPIENTS manquant).")
 
     # 3) Message
     msg = MIMEMultipart()
