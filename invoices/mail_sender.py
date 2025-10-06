@@ -1,12 +1,11 @@
-﻿# invoices/mail_sender.py
+# invoices/mail_sender.py
 import os
 import mimetypes
 import smtplib
 from email.message import EmailMessage
 from pathlib import Path
 from typing import List
-
-from invoices.utils import load_env_config, ConfigError  # <-- import via package
+from invoices.utils import load_env_config, ConfigError  # import via package
 
 def normalize_recipients(val) -> List[str]:
     """Accepte une liste ou une chaîne séparée par des virgules, nettoie et déduplique."""
@@ -16,7 +15,7 @@ def normalize_recipients(val) -> List[str]:
         items = val
     else:
         items = str(val).split(",")
-    cleaned = []
+    cleaned: List[str] = []
     seen = set()
     for x in items:
         addr = str(x).strip()
@@ -42,7 +41,7 @@ def send_report(excel_file: str):
     Supporte EMAIL_RECIPIENTS, EMAIL_CC, EMAIL_BCC (liste ou chaîne).
     SMTP_SSL (465) par défaut, STARTTLS si SMTP_USE_STARTTLS=true.
     """
-    env = load_env_config()  # sécurisé: main l'a déjà validé, mais on peut l'appeler à nouveau
+    env = load_env_config()
 
     account = env["EMAIL_ACCOUNT"]
     app_pass = env["GMAIL_APP_PASSWORD"]
@@ -66,7 +65,7 @@ def send_report(excel_file: str):
         msg["To"] = ", ".join(to_list)
     if cc_list:
         msg["Cc"] = ", ".join(cc_list)
-    # Bcc non mis dans les headers visibles
+    # Bcc n'apparaît pas dans les en-têtes visibles
     msg["Reply-To"] = account
     msg.set_content(body)
 
@@ -75,4 +74,15 @@ def send_report(excel_file: str):
     all_rcpts = to_list + cc_list + bcc_list
 
     if use_starttls:
-        # STARTTLS (ex: smtp.gmail
+        # STARTTLS (ex: smtp.gmail.com:587)
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(account, app_pass)
+            server.send_message(msg, from_addr=account, to_addrs=all_rcpts)
+    else:
+        # SSL direct (ex: smtp.gmail.com:465)
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(account, app_pass)
+            server.send_message(msg, from_addr=account, to_addrs=all_rcpts)
