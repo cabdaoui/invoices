@@ -1,10 +1,9 @@
-﻿# invoices/pdf_parser.py
+# invoices/pdf_parser.py
 from __future__ import annotations
 
 import re
 from pathlib import Path
 from typing import Optional, Dict, Any
-
 import pdfplumber
 
 # -------------------------------
@@ -77,13 +76,17 @@ _RGX_DATE = re.compile(
     re.IGNORECASE,
 )
 
-# Montants : "Total TTC", "Montant TTC", "Total à payer", "Grand total", "Total"
-_RGX_AMOUNT = [
+# Montants génériques : "Total TTC", "Montant TTC", "Total à payer", "Grand total", "Total"
+_RGX_AMOUNT_GENERIC = [
     r"\b(?:total\s*(?:ttc|t\.t\.c\.)?|montant\s*ttc|total\s*à\s*payer|net\s*à\s*payer)\b[^0-9€$]*([€$]?)\s*([\d\s.,]+)\s*([€$]?)",
     r"\b(?:grand\s*total|amount\s*due|total)\b[^0-9€$]*([€$]?)\s*([\d\s.,]+)\s*([€$]?)",
 ]
-_RGX_AMOUNT = [re.compile(p, re.IGNORECASE) for p in _RGX_AMOUNT]
+_RGX_AMOUNT_GENERIC = [re.compile(p, re.IGNORECASE) for p in _RGX_AMOUNT_GENERIC]
 
+# Montant prioritaire : ligne commençant par "Total TTC*" (éventuellement suivi de "pour <mois> <année>")
+_RGX_AMOUNT_TTC_STAR = re.compile(
+    r"(?im)^\s*total\s*ttc\*\s*(?:pour\s+[A-Za-zéûîôàèâùç]+\s+\d{4})?\s*([€$]?)\s*([\d\s.,]+)\s*([€$]?)\s*$"
+)
 
 # -------------------------------
 # Extraction de champs
@@ -123,10 +126,10 @@ def _extract_date(text: str) -> Optional[str]:
     if not m:
         return None
     if m.group("y"):
-        # dd/mm/yyyy ou dd-mm-yyyy -> formatte en dd/mm/yyyy
+        # dd/mm/yyyy ou dd-mm-yyyy -> dd/mm/yyyy
         d, mo, y = m.group("d"), m.group("m"), m.group("y")
         return f"{d}/{mo}/{y}"
-    # yyyy-mm-dd -> formatte en dd/mm/yyyy
+    # yyyy-mm-dd -> dd/mm/yyyy
     y2, m2, d2 = m.group("y2"), m.group("m2"), m.group("d2")
     return f"{d2}/{m2}/{y2}"
 
@@ -170,12 +173,24 @@ def _format_amount_for_fr_display(num_str: str, currency_left: str, currency_rig
 
 
 def _extract_amount(text: str) -> Optional[str]:
+    """
+    1) Priorise une ligne 'Total TTC* ... <montant>'
+    2) Sinon, retombe sur des variantes génériques
+    """
     t = _soft_normalize(text)
-    for rgx in _RGX_AMOUNT:
+
+    # 1) Prioritaire : 'Total TTC* ... montant'
+    m = _RGX_AMOUNT_TTC_STAR.search(t)
+    if m:
+        return _format_amount_for_fr_display(m.group(2), m.group(1), m.group(3))
+
+    # 2) Génériques
+    for rgx in _RGX_AMOUNT_GENERIC:
         m = rgx.search(t)
         if m:
             cur_left, num_str, cur_right = m.group(1), m.group(2), m.group(3)
             return _format_amount_for_fr_display(num_str, cur_left, cur_right)
+
     return None
 
 
@@ -187,3 +202,39 @@ def extract_invoice_data(pdf_path: str | Path) -> Dict[str, Any]:
     """
     Extrait les informations principales d'une facture PDF :
       - 'facture'  : numéro de facture (str) ou 'INCONNU'
+      - 'date'     : dd/mm/yyyy (str) ou 'INCONNU'  (extraction depuis des formes comme "L'équipe Alan, le 03/03/2025")
+      - 'montant'  : '1 234,56€' (str) ou 'INCONNU' (priorise la ligne 'Total TTC* ... 323,00€')
+      - 'fichier'  : nom du fichier PDF (str)
+    """
+    invoice_number: Optional[str] = None
+    amount: Optional[str] = None
+    date: Optional[str] = None
+
+    pdf_path = str(pdf_path)
+    pdf_name = Path(pdf_path).name
+
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            text = ""
+            for page in pdf.pages:
+                page_text = page.extract_text() or ""
+                text += page_text + "\n"
+
+        invoice_number = _extract_invoice_number(text, filename=pdf_path)
+        date = _extract_date(text)
+        amount = _extract_amount(text)
+
+    except Exception as e:
+        print(f"❌ Erreur lors de l'extraction du PDF {pdf_path} : {e}")
+
+    return {
+        "facture": invoice_number if invoice_number else "INCONNU",
+        "date": date if date else "INCONNU",
+        "montant": amount if amount else "INCONNU",
+        "fichier": pdf_name,
+    }
+
+
+# -------------------------------
+# Utilitaire : extraction directe d'une chaîne
+# ---------------------------
