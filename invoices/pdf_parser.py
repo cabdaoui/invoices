@@ -1,4 +1,4 @@
-# invoices/pdf_parser.py
+﻿# invoices/pdf_parser.py
 from __future__ import annotations
 
 import re
@@ -237,4 +237,19 @@ def extract_invoice_data(pdf_path: str | Path) -> Dict[str, Any]:
 
 # -------------------------------
 # Utilitaire : extraction directe d'une chaîne
-# ---------------------------
+# -------------------------------
+
+def extract_invoice_number_from_string(s: str) -> Optional[str]:
+    """
+    Extrait un numéro de facture directement depuis une chaîne.
+    Exemple :
+        'Facture N°2025-03-621513456-000059041-IH-1' -> '2025-03-621513456-000059041-IH-1'
+    """
+    s = _soft_normalize(s or "")
+    for rgx in _RGX_INVOICE:
+        m = rgx.search(s)
+        if m:
+            num = _normalize_invoice_number(m.group(1))
+            if len(num) >= 3 and not re.fullmatch(r"\d{4}[-/]\d{2}[-/]\d{2}", num):
+                return num
+    return None
