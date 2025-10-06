@@ -1,255 +1,74 @@
-﻿# invoices/pdf_parser.py
-from __future__ import annotations
+﻿import re
 
-import re
-from pathlib import Path
-from typing import Optional, Dict, Any
-import pdfplumber
-
-# -------------------------------
-# Helpers de normalisation texte
-# -------------------------------
-
-def _soft_normalize(text: str) -> str:
-    """
-    Normalise légèrement le texte issu d'un PDF/OCR :
-    - remplace certains espaces insécables/typos
-    - harmonise quelques tirets
-    - compacte les espaces multiples
-    """
-    if not text:
-        return ""
-    t = text
-    t = t.replace("\u00A0", " ").replace("\u2009", " ")
-    t = t.replace("\u2011", "-").replace("\u2013", "-").replace("\u2014", "-")
-    t = re.sub(r"[ \t]{2,}", " ", t)
-    return t
-
-
-def _normalize_invoice_number(raw: str) -> str:
-    """
-    Nettoie le numéro de facture capturé :
-    - supprime décorations (#, :, ponctuation finale)
-    - compactage espaces/tirets
-    - corrections OCR prudentes (O->0, I/l->1) dans des tokens numériques
-    - garde seulement caractères usuels
-    """
-    s = (raw or "").strip()
-    s = re.sub(r"^[#:]*\s*", "", s)
-    s = s.rstrip(".,;:")
-    s = re.sub(r"[ \t]{2,}", " ", s)
-    s = re.sub(r"-{2,}", "-", s)
-
-    def _fix_token(tok: str) -> str:
-        if len(tok) >= 3:
-            tok = re.sub(r"(?<=\d)O(?=\d)", "0", tok)
-            tok = re.sub(r"(?<=\d)[Il](?=\d)", "1", tok)
-        return tok
-
-    parts = re.split(r"([\-_/])", s)  # conserve séparateurs
-    parts = [_fix_token(p) for p in parts]
-    s = "".join(parts)
-    s = re.sub(r"[^A-Za-z0-9\-_./ ]", "", s).strip()
-    return s
-
-
-# -------------------------------
-# Regex précompilées
-# -------------------------------
-
-# Numéro de facture (variantes FR/EN)
-_RGX_INVOICE = [
-    # FR
-    r"\b(?:facture|num[eé]ro\s+de\s+facture|r[eé]f[eé]rence\s+facture)\s*(?:n[°ºo])?\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9\-/_. ]{1,60})",
-    r"\bn[°ºo]\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9\-/_. ]{1,60})",
-    # EN
-    r"\b(?:invoice\s*(?:no\.?|number|#)|inv\.?\s*no\.?)\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9\-/_. ]{1,60})",
-    # Abrégé possible
-    r"\bfact\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9\-/_. ]{1,60})",
+# 1) Numéro de facture (gère: "Facture N°...", "Nº", "No", "Invoice No.", "INV No.")
+RGX_INVOICE = [
+    re.compile(r"(?i)\bfacture\s*(?:n[°ºo]\s*)?[:#]?\s*([A-Za-z0-9][A-Za-z0-9._/\-]{1,})"),
+    re.compile(r"(?i)\bn[°ºo]\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9._/\-]{1,})"),
+    re.compile(r"(?i)\binvoice\s*(?:no\.?|number|#)\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9._/\-]{1,})"),
+    re.compile(r"(?i)\binv\.?\s*no\.?\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9._/\-]{1,})"),
 ]
-_RGX_INVOICE = [re.compile(p, re.IGNORECASE) for p in _RGX_INVOICE]
 
-# Dates courantes : dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd (avec/sans "le ")
-_RGX_DATE = re.compile(
-    r"(?:\ble\s+)?(?P<d>\d{2})[/-](?P<m>\d{2})[/-](?P<y>\d{4})\b"
-    r"|\b(?P<y2>\d{4})-(?P<m2>\d{2})-(?P<d2>\d{2})\b",
-    re.IGNORECASE,
-)
-
-# Montants génériques : "Total TTC", "Montant TTC", "Total à payer", "Grand total", "Total"
-_RGX_AMOUNT_GENERIC = [
-    r"\b(?:total\s*(?:ttc|t\.t\.c\.)?|montant\s*ttc|total\s*à\s*payer|net\s*à\s*payer)\b[^0-9€$]*([€$]?)\s*([\d\s.,]+)\s*([€$]?)",
-    r"\b(?:grand\s*total|amount\s*due|total)\b[^0-9€$]*([€$]?)\s*([\d\s.,]+)\s*([€$]?)",
-]
-_RGX_AMOUNT_GENERIC = [re.compile(p, re.IGNORECASE) for p in _RGX_AMOUNT_GENERIC]
-
-# Montant prioritaire : ligne commençant par "Total TTC*" (éventuellement suivi de "pour <mois> <année>")
-_RGX_AMOUNT_TTC_STAR = re.compile(
-    r"(?im)^\s*total\s*ttc\*\s*(?:pour\s+[A-Za-zéûîôàèâùç]+\s+\d{4})?\s*([€$]?)\s*([\d\s.,]+)\s*([€$]?)\s*$"
-)
-
-# -------------------------------
-# Extraction de champs
-# -------------------------------
-
-def _extract_invoice_number(text: str, filename: Optional[str] = None) -> Optional[str]:
-    t = _soft_normalize(text)
-    for rgx in _RGX_INVOICE:
-        m = rgx.search(t)
-        if m:
-            num = _normalize_invoice_number(m.group(1))
-            # évite de prendre une date au format 2025-10-06
-            if re.fullmatch(r"\d{4}[-/]\d{2}[-/]\d{2}", num):
-                continue
-            if len(num) >= 3:
-                return num
-
-    # Fallback depuis le nom de fichier (ex: FACTURE_2024-123.pdf)
-    if filename:
-        stem = _soft_normalize(Path(filename).stem)
-        m = re.search(r"(?:facture|invoice|inv)[-_ ]*([A-Za-z0-9][A-Za-z0-9\-/_. ]{1,60})", stem, flags=re.IGNORECASE)
-        if m:
-            num = _normalize_invoice_number(m.group(1))
-            if len(num) >= 3:
-                return num
-        # dernier recours : motif alphanum raisonnable
-        m = re.search(r"([A-Za-z0-9]{3,}[-_/][A-Za-z0-9\-_/]{2,})", stem)
-        if m:
-            return _normalize_invoice_number(m.group(1))
-
-    return None
-
-
-def _extract_date(text: str) -> Optional[str]:
-    t = _soft_normalize(text)
-    m = _RGX_DATE.search(t)
-    if not m:
-        return None
-    if m.group("y"):
-        # dd/mm/yyyy ou dd-mm-yyyy -> dd/mm/yyyy
-        d, mo, y = m.group("d"), m.group("m"), m.group("y")
-        return f"{d}/{mo}/{y}"
-    # yyyy-mm-dd -> dd/mm/yyyy
-    y2, m2, d2 = m.group("y2"), m.group("m2"), m.group("d2")
-    return f"{d2}/{m2}/{y2}"
-
-
-def _format_amount_for_fr_display(num_str: str, currency_left: str, currency_right: str) -> str:
-    """
-    Convertit '2 345,67', '2,345.67', '2345.67' -> '2 345,67 €' (ou $).
-    Si parsing impossible, renvoie la valeur nettoyée + devise si dispo.
-    """
-    s = (num_str or "").strip()
-    s = s.replace(" ", "")
-
-    # Détecter séparateur décimal probable
-    dec = None
-    if "," in s and "." in s:
-        dec = "." if s.rfind(".") > s.rfind(",") else ","
-    elif "," in s:
-        dec = ","
-    elif "." in s:
-        dec = "."
-
-    try:
-        if dec == ",":
-            s_clean = s.replace(".", "").replace(",", ".")
-        elif dec == ".":
-            s_clean = s.replace(",", "")
-        else:
-            s_clean = s  # entier
-
-        val = float(s_clean)
-        out = f"{val:,.2f}".replace(",", "X").replace(".", ",").replace("X", " ")
-        cur = currency_left or currency_right or ""
-        if cur:
-            if cur == "€":
-                return f"{out}€"
-            return f"{cur}{out}" if cur == "$" else f"{out} {cur}"
-        return out
-    except Exception:
-        cur = currency_left or currency_right or ""
-        return f"{s}{cur}"
-
-
-def _extract_amount(text: str) -> Optional[str]:
-    """
-    1) Priorise une ligne 'Total TTC* ... <montant>'
-    2) Sinon, retombe sur des variantes génériques
-    """
-    t = _soft_normalize(text)
-
-    # 1) Prioritaire : 'Total TTC* ... montant'
-    m = _RGX_AMOUNT_TTC_STAR.search(t)
-    if m:
-        return _format_amount_for_fr_display(m.group(2), m.group(1), m.group(3))
-
-    # 2) Génériques
-    for rgx in _RGX_AMOUNT_GENERIC:
-        m = rgx.search(t)
-        if m:
-            cur_left, num_str, cur_right = m.group(1), m.group(2), m.group(3)
-            return _format_amount_for_fr_display(num_str, cur_left, cur_right)
-
-    return None
-
-
-# -------------------------------
-# API principale
-# -------------------------------
-
-def extract_invoice_data(pdf_path: str | Path) -> Dict[str, Any]:
-    """
-    Extrait les informations principales d'une facture PDF :
-      - 'facture'  : numéro de facture (str) ou 'INCONNU'
-      - 'date'     : dd/mm/yyyy (str) ou 'INCONNU'  (extraction depuis des formes comme "L'équipe Alan, le 03/03/2025")
-      - 'montant'  : '1 234,56€' (str) ou 'INCONNU' (priorise la ligne 'Total TTC* ... 323,00€')
-      - 'fichier'  : nom du fichier PDF (str)
-    """
-    invoice_number: Optional[str] = None
-    amount: Optional[str] = None
-    date: Optional[str] = None
-
-    pdf_path = str(pdf_path)
-    pdf_name = Path(pdf_path).name
-
-    try:
-        with pdfplumber.open(pdf_path) as pdf:
-            text = ""
-            for page in pdf.pages:
-                page_text = page.extract_text() or ""
-                text += page_text + "\n"
-
-        invoice_number = _extract_invoice_number(text, filename=pdf_path)
-        date = _extract_date(text)
-        amount = _extract_amount(text)
-
-    except Exception as e:
-        print(f"❌ Erreur lors de l'extraction du PDF {pdf_path} : {e}")
-
-    return {
-        "facture": invoice_number if invoice_number else "INCONNU",
-        "date": date if date else "INCONNU",
-        "montant": amount if amount else "INCONNU",
-        "fichier": pdf_name,
-    }
-
-
-# -------------------------------
-# Utilitaire : extraction directe d'une chaîne
-# -------------------------------
-
-def extract_invoice_number_from_string(s: str) -> Optional[str]:
-    """
-    Extrait un numéro de facture directement depuis une chaîne.
-    Exemple :
-        'Facture N°2025-03-621513456-000059041-IH-1' -> '2025-03-621513456-000059041-IH-1'
-    """
-    s = _soft_normalize(s or "")
-    for rgx in _RGX_INVOICE:
+def find_invoice_number(s: str) -> str | None:
+    for rgx in RGX_INVOICE:
         m = rgx.search(s)
         if m:
-            num = _normalize_invoice_number(m.group(1))
-            if len(num) >= 3 and not re.fullmatch(r"\d{4}[-/]\d{2}[-/]\d{2}", num):
-                return num
+            return m.group(1)
     return None
+
+# 2) Date (capte: "le 03/03/2025", "03-03-2025", "2025-03-03")
+RGX_DATE = re.compile(
+    r"(?i)(?:\ble\s*)?(?P<d1>\d{2})[/-](?P<m1>\d{2})[/-](?P<y1>\d{4})\b"
+    r"|(?P<y2>\d{4})-(?P<m2>\d{2})-(?P<d2>\d{2})\b"
+)
+
+def find_date(s: str) -> str | None:
+    m = RGX_DATE.search(s)
+    if not m:
+        return None
+    # Retourne simplement la sous-chaîne trouvée (sans normalisation hors-regex)
+    return m.group(0)
+
+# 3) Montant prioritaire "Total TTC*" (ligne entière, multi-lignes)
+#    Exemples : "Total TTC* pour Mars 2025 323,00€" | "Total TTC*  $ 1,234.56"
+RGX_TOTAL_TTC_STAR = re.compile(
+    r"(?im)^\s*total\s*ttc\*\s*(?:pour\s+\S+(?:\s+\d{4})?)?\s*([€$]?)\s*([\d\s.,]+)\s*([€$]?)\s*$"
+)
+
+def find_amount_total_ttc_star(s: str) -> str | None:
+    m = RGX_TOTAL_TTC_STAR.search(s)
+    if not m:
+        return None
+    cur_left, num, cur_right = m.group(1), m.group(2), m.group(3)
+    cur = cur_left or cur_right or ""
+    return f"{num.strip()}{cur}" if cur else num.strip()
+
+# 4) Montants génériques si la ligne "Total TTC*" n'existe pas
+RGX_AMOUNT_GENERIC = [
+    re.compile(r"(?i)\b(?:total\s*(?:ttc|t\.t\.c\.)?|montant\s*ttc|total\s*à\s*payer|net\s*à\s*payer)\b[^0-9€$]*([€$]?)\s*([\d\s.,]+)\s*([€$]?)"),
+    re.compile(r"(?i)\b(?:grand\s*total|amount\s*due|total)\b[^0-9€$]*([€$]?)\s*([\d\s.,]+)\s*([€$]?)"),
+]
+
+def find_amount_generic(s: str) -> str | None:
+    for rgx in RGX_AMOUNT_GENERIC:
+        m = rgx.search(s)
+        if m:
+            cur_left, num, cur_right = m.group(1), m.group(2), m.group(3)
+            cur = cur_left or cur_right or ""
+            return f"{num.strip()}{cur}" if cur else num.strip()
+    return None
+
+# ------------------------------
+# Démo rapide
+# ------------------------------
+if __name__ == "__main__":
+    s_num = "Facture N°2025-03-621513456-000059041-IH-1"
+    print("INVOICE:", find_invoice_number(s_num))  # -> 2025-03-621513456-000059041-IH-1
+
+    s_date = "L'équipe Alan, le 03/03/2025"
+    print("DATE:", find_date(s_date))              # -> le 03/03/2025 (ou 03/03/2025 selon le match)
+
+    s_amt = "Total TTC* pour Mars 2025 323,00€\nAutre ligne"
+    print("AMOUNT_TTC*:", find_amount_total_ttc_star(s_amt))  # -> 323,00€
+
+    s_amt2 = "Montant TTC 1 234,56 €"
+    print("AMOUNT_GENERIC:", find_amount_generic(s_amt2))     # -> 1 234,56 €
