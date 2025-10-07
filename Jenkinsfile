@@ -1,4 +1,4 @@
-pipeline {
+﻿pipeline {
   agent any
   options { timestamps() }
 
@@ -32,6 +32,8 @@ pipeline {
           "%PY311%" -m venv venv
           venv\\Scripts\\python.exe -m pip install --upgrade pip
           venv\\Scripts\\python.exe -m pip install -r requirements.txt
+          REM --- Ajout explicite de PyPDF2 ---
+          venv\\Scripts\\python.exe -m pip install PyPDF2
           """
         }
       }
