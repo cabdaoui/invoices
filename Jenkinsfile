@@ -1,9 +1,10 @@
-﻿pipeline {
+pipeline {
   agent any
   options { timestamps() }
 
   environment {
-    PY311 = 'C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
+    // Chemin Python : ajuste si nécessaire
+    PYTHON_EXE = 'C:\\Users\\cabda\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
   }
 
   stages {
@@ -17,33 +18,27 @@
 
     stage('Prepare Folders') {
       steps {
-        bat '''
-        if not exist input mkdir input
-        if not exist output mkdir output
-        if not exist traitement mkdir traitement
-        '''
+        bat 'if not exist input mkdir input'
+        bat 'if not exist output mkdir output'
+        bat 'if not exist traitement mkdir traitement'
       }
     }
 
     stage('Setup Python Env') {
       steps {
-        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-          bat """
-          "%PY311%" -m venv venv
-          venv\\Scripts\\python.exe -m pip install --upgrade pip
-          venv\\Scripts\\python.exe -m pip install -r requirements.txt
-          REM --- Ajout explicite de PyPDF2 ---
-          venv\\Scripts\\python.exe -m pip install PyPDF2
-          """
-        }
+        // Pas de GString multiline pour éviter certains parseurs groovy capricieux
+        bat "\"%PYTHON_EXE%\" -m venv venv"
+        bat "venv\\Scripts\\python.exe -m pip install --upgrade pip"
+        // Installe requirements si présent (sinon, on continue)
+        bat "if exist requirements.txt venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+        // Installation explicite de PyPDF2 (au cas où non listé dans requirements)
+        bat "venv\\Scripts\\python.exe -m pip install PyPDF2"
       }
     }
 
     stage('Run Program') {
       steps {
-        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-          bat "venv\\Scripts\\python.exe -m invoices.main"
-        }
+        bat "venv\\Scripts\\python.exe -m invoices.main"
       }
     }
 
@@ -56,27 +51,18 @@
 
     stage('Archive Report') {
       steps {
-        bat '''
-        if not exist output\\*.xlsx (
-          echo No report generated>output\\no_report.txt
-        )
-        '''
+        // Crée un marqueur si aucun .xlsx
+        bat "if not exist output\\*.xlsx echo No report generated>output\\no_report.txt"
         archiveArtifacts artifacts: 'output/*.xlsx, output/no_report.txt',
-                          fingerprint: true,
-                          onlyIfSuccessful: false,
-                          allowEmptyArchive: true
+                         fingerprint: true,
+                         onlyIfSuccessful: false,
+                         allowEmptyArchive: true
       }
     }
   }
 
   post {
     always {
-      // Optionnel : forcer SUCCESS même si des stages ont échoué interceptés
-      script {
-        if (currentBuild.result == null || currentBuild.result in ['FAILURE','UNSTABLE']) {
-          currentBuild.result = 'SUCCESS'
-        }
-      }
       echo 'Pipeline terminé.'
     }
   }
