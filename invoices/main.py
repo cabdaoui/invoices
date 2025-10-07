@@ -7,7 +7,7 @@ from pathlib import Path
 
 from invoices.utils import load_env_config, ConfigError
 from invoices.pdf_parser import extract_invoice_data  # PyPDF2 + regex
-from invoices.excel_reporter import write_report
+from invoices import excel_reporter, mail_sender      # ⬅️ ajouté
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s - %(message)s")
 
@@ -101,9 +101,6 @@ def main():
         output_dir = _resolve_dir(root, env.get("OUTPUT_DIR", "./output"))
         _mkdirs(input_dir, trait_dir, output_dir)
 
-        excel_name = env.get("EXCEL_FILE", "Reporting_invoices.xlsx")
-        excel_file = output_dir / excel_name
-
         # CSV configurable, défaut: invoices_extract.csv
         csv_name = env.get("CSV_FILE", "invoices_extract.csv")
         csv_file = output_dir / csv_name
@@ -134,20 +131,20 @@ def main():
             except Exception as e:
                 logging.error(f"Échec extraction {pdf}: {e}")
 
-        # 3) CSV + Excel
+        # 3) CSV + Excel (nom verrouillé -> OUTPUT_DIR/invoices_extract.xlsx)
         if rows:
             # CSV
             _write_csv_report(rows, csv_file)
 
-            # Excel (si tu veux aligner les colonnes, excel_reporter peut lire rows normalisées)
-            write_report(rows, excel_file)
-            logging.info(f"Reporting Excel généré: {excel_file} ({len(rows)} ligne(s))")
+            # Excel verrouillé sur invoices_extract.xlsx
+            xlsx_path = excel_reporter.write_report_to_output(rows)
+            logging.info(f"Reporting Excel généré: {xlsx_path} ({len(rows)} ligne(s))")
         else:
             allow_empty = str(env.get("ALLOW_EMPTY_REPORT_IF_MISSING", "")).lower() in ("1", "true", "yes")
             if allow_empty:
                 logging.warning("Aucune donnée extraite, création d'un CSV/Excel vides (ALLOW_EMPTY_REPORT_IF_MISSING=true).")
                 _write_csv_report([], csv_file)
-                write_report([], excel_file)
+                xlsx_path = excel_reporter.write_report_to_output([])
             else:
                 raise FileNotFoundError(
                     "Aucune facture PDF traitée -> pas de reporting généré.\n"
@@ -155,25 +152,27 @@ def main():
                     "💡 Ajoute des PDF dans INPUT, ou active ALLOW_EMPTY_REPORT_IF_MISSING=true dans env.json."
                 )
 
-        # Double vérif Excel
-        if not excel_file.exists():
-            logging.warning(f"Reporting introuvable à l'endroit prévu: {excel_file}")
-            found = _find_excel_anywhere(root, excel_name)
+        # Double vérif Excel (sur le nom attendu invoices_extract.xlsx)
+        if not Path(xlsx_path).exists():
+            logging.warning(f"Reporting introuvable à l'endroit prévu: {xlsx_path}")
+            found = _find_excel_anywhere(root, Path(xlsx_path).name)
             if found:
                 logging.info(f"Reporting trouvé ailleurs: {found}")
+                xlsx_path = found
             else:
                 raise FileNotFoundError(
                     "Le reporting n'existe pas à l'endroit prévu et n'a pas été trouvé ailleurs.\n"
-                    f"  Attendu : {excel_file}\n"
+                    f"  Attendu : {xlsx_path}\n"
                     f"  Racine   : {root}\n"
                     f"  OUTPUT   : {_list_dir(output_dir)}\n"
                     "💡 Vérifie la génération du reporting ou active ALLOW_EMPTY_REPORT_IF_MISSING=true."
                 )
 
-        # 4) Envoi email avec le reporting Excel
-        import invoices.mail_sender as mail_sender
-        logging.info(f"Envoi du reporting par email: {excel_file}")
-        mail_sender.send_report(str(excel_file))
+        # 4) Envoi email avec le reporting Excel (sans argument)
+        logging.info(f"Envoi du reporting par email: {xlsx_path}")
+        mail_sender.send_report()                 # recommandé
+        # ou, si tu préfères être explicite :
+        # mail_sender.send_report(str(xlsx_path))  # aussi OK (nom conforme)
 
         logging.info("✅ Pipeline terminé avec succès (CSV + Excel + Email).")
 
