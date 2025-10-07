@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Mapping, Any, List, Sequence, Tuple, Optional
+from typing import Iterable, Mapping, Any, Sequence, Optional
+import os
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+
+from invoices.utils import load_env_config  # <-- pour lire OUTPUT_DIR depuis env.json
 
 # Ordre des colonnes attendu par pdf_parser.extract_invoice_data()
 COLUMNS: Sequence[str] = (
@@ -19,8 +22,32 @@ COLUMNS: Sequence[str] = (
     "source_montant",  # info debug : "TTC* mois" / "TTC* générique" / "montant générique"
 )
 
+ALLOWED_EXCEL_NAME = "invoices_extract.xlsx"
+
+
+# ---------------------------
+# Helpers chemins & fichiers
+# ---------------------------
+
+def _project_root() -> Path:
+    """Racine du projet: parent de invoices/ ou WORKSPACE Jenkins si défini."""
+    package_dir = Path(__file__).resolve().parent  # .../invoices
+    ws = os.environ.get("WORKSPACE")
+    if ws:
+        return Path(ws).resolve()
+    return package_dir.parent  # .../invoices_project
+
+def _resolve_dir(base: Path, value: str) -> Path:
+    p = Path(value)
+    return (base / p).resolve() if not p.is_absolute() else p.resolve()
+
 def _ensure_parent_dir(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+
+
+# ---------------------------
+# Parsing / formats
+# ---------------------------
 
 def _number_from_amount(val: Any) -> Optional[float]:
     """
@@ -35,7 +62,6 @@ def _number_from_amount(val: Any) -> Optional[float]:
     # retire les devises courantes et espaces
     s = s.replace("€", "").replace("$", "").replace(" ", "")
     # heuristique du séparateur décimal
-    # - si comma et point : le dernier rencontré est probablement le décimal
     if "," in s and "." in s:
         if s.rfind(".") > s.rfind(","):
             # "1,234.56" -> milliers: ',', décimal: '.'
@@ -51,6 +77,11 @@ def _number_from_amount(val: Any) -> Optional[float]:
         return float(s)
     except Exception:
         return None
+
+
+# ---------------------------
+# Mise en forme Excel
+# ---------------------------
 
 def _apply_table_style(ws: Worksheet, n_rows: int, n_cols: int) -> None:
     # Style en-tête
@@ -87,7 +118,16 @@ def _apply_table_style(ws: Worksheet, n_rows: int, n_cols: int) -> None:
             max_len = max(max_len, l)
         ws.column_dimensions[letter].width = min(max(10, max_len + 2), 60)
 
-def write_report(rows: Iterable[Mapping[str, Any]], xlsx_path: str | Path, sheet_name: str = "Reporting") -> Path:
+
+# ---------------------------
+# Écriture Excel
+# ---------------------------
+
+def write_report(
+    rows: Iterable[Mapping[str, Any]],
+    xlsx_path: str | Path,
+    sheet_name: str = "Reporting"
+) -> Path:
     """
     Écrit un Excel de reporting aligné sur pdf_parser.extract_invoice_data().
     - rows: itérable de dicts ayant idéalement les clés COLUMNS
@@ -111,7 +151,6 @@ def write_report(rows: Iterable[Mapping[str, Any]], xlsx_path: str | Path, sheet
     count = 0
     for r in rows:
         count += 1
-        # Valeurs par défaut si clés manquantes
         fichier = r.get("fichier", "")
         facture = r.get("facture", "")
         date = r.get("date", "")
@@ -122,11 +161,17 @@ def write_report(rows: Iterable[Mapping[str, Any]], xlsx_path: str | Path, sheet
         # Conversion du total_ttc si possible
         total_number = _number_from_amount(total_ttc_raw)
 
-        ws.append([fichier, facture, date, total_number if total_number is not None else total_ttc_raw, periode, source_montant])
+        ws.append([
+            fichier,
+            facture,
+            date,
+            total_number if total_number is not None else total_ttc_raw,
+            periode,
+            source_montant
+        ])
 
     # Format nombre à 2 décimales (FR-like) pour la colonne total_ttc quand numérique
-    # Colonne 4 = total_ttc
-    for row_idx in range(2, count + 2):
+    for row_idx in range(2, count + 2):  # Colonne 4 = total_ttc
         cell = ws.cell(row=row_idx, column=4)
         if isinstance(cell.value, (int, float)):
             cell.number_format = '#,##0.00'
@@ -134,3 +179,27 @@ def write_report(rows: Iterable[Mapping[str, Any]], xlsx_path: str | Path, sheet
     _apply_table_style(ws, n_rows=count + 1, n_cols=len(COLUMNS))
     wb.save(xlsx_path)
     return xlsx_path
+
+
+# ---------------------------
+# Fonctions ajoutées pour pipeline
+# ---------------------------
+
+def default_output_xlsx_path() -> Path:
+    """Construit <OUTPUT_DIR>/invoices_extract.xlsx (dossier créé si besoin)."""
+    env = load_env_config()
+    root = _project_root()
+    output_dir = _resolve_dir(root, env.get("OUTPUT_DIR", "./output"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return (output_dir / ALLOWED_EXCEL_NAME).resolve()
+
+def write_report_to_output(
+    rows: Iterable[Mapping[str, Any]],
+    sheet_name: str = "Reporting"
+) -> Path:
+    """
+    Écrit le reporting dans <OUTPUT_DIR>/invoices_extract.xlsx (nom imposé).
+    Retourne le chemin absolu.
+    """
+    xlsx_path = default_output_xlsx_path()
+    return write_report(rows, xlsx_path, sheet_name)
