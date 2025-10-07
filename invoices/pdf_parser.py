@@ -248,10 +248,3 @@ def process_input_folder_to_xlsx(
 def extract_invoice_number_from_string(s: str) -> Optional[str]:
     return find_invoice_number(s or "", filename=None)
 
-# ============================
-#   MAIN (exécution directe)
-# ============================
-
-if __name__ == "__main__":
-    # ⚠️ On génère maintenant un XLSX par défaut
-    process_input_folder_to_xlsx()

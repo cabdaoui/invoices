@@ -8,6 +8,9 @@ from typing import List, Optional
 
 from invoices.utils import load_env_config, ConfigError  # import via package
 
+# Nom de fichier autorisé (verrouillage)
+ALLOWED_EXCEL_NAME = "invoices_extract.xlsx"
+
 
 # ---------------------------
 # Helpers chemins & fichiers
@@ -26,6 +29,7 @@ def _resolve_dir(base: Path, value: str) -> Path:
     return (base / p).resolve() if not p.is_absolute() else p.resolve()
 
 def _latest_xlsx_in(dir_path: Path) -> Optional[Path]:
+    # (Conservé mais non utilisé, au cas où — peut être supprimé)
     if not dir_path.exists():
         return None
     xlsxs = sorted(dir_path.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -57,6 +61,10 @@ def _attach_file(msg: EmailMessage, file_path: str | os.PathLike):
     p = Path(file_path)
     if not p.exists():
         raise FileNotFoundError(f"Pièce jointe introuvable: {p}")
+    # Sécurité: n’autoriser que invoices_extract.xlsx
+    if p.name != ALLOWED_EXCEL_NAME:
+        raise ConfigError(f"Seul le fichier '{ALLOWED_EXCEL_NAME}' est autorisé en pièce jointe (reçu: '{p.name}').")
+
     ctype, encoding = mimetypes.guess_type(str(p))
     if ctype is None or encoding is not None:
         ctype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" if p.suffix.lower() == ".xlsx" \
@@ -67,59 +75,75 @@ def _attach_file(msg: EmailMessage, file_path: str | os.PathLike):
 
 
 # ---------------------------
-# Envoi principal
+# Résolution stricte du fichier Excel
 # ---------------------------
 
 def _resolve_excel_path_from_env(env: dict) -> Path:
-    """Construit le chemin du fichier Excel à partir de env.json, avec fallbacks intelligents."""
+    """
+    Renvoie le chemin de 'invoices_extract.xlsx' UNIQUEMENT :
+      - si EXCEL_FILE est défini, il doit s'appeler exactement 'invoices_extract.xlsx'
+      - sinon on cherche 'invoices_extract.xlsx' dans OUTPUT_DIR
+    Échec sinon.
+    """
     root = _project_root()
     output_dir = _resolve_dir(root, env.get("OUTPUT_DIR", "./output"))
+
     preferred_name = env.get("EXCEL_FILE", "").strip()
-
-    # 1) Nom préféré depuis env.json
+    # Si EXCEL_FILE est renseigné, il doit être le nom autorisé
     if preferred_name:
-        p = (output_dir / preferred_name).resolve()
+        pref = Path(preferred_name).name  # normaliser sur le nom
+        if pref != ALLOWED_EXCEL_NAME:
+            raise ConfigError(
+                f"EXCEL_FILE doit être '{ALLOWED_EXCEL_NAME}' (actuel: '{pref}')."
+            )
+        p = (output_dir / ALLOWED_EXCEL_NAME).resolve()
         if p.exists():
             return p
+        # S'il ne se trouve pas dans OUTPUT_DIR, tenter tel quel si chemin absolu
+        abs_try = Path(preferred_name)
+        if abs_try.is_absolute() and abs_try.exists() and abs_try.name == ALLOWED_EXCEL_NAME:
+            return abs_try.resolve()
 
-    # 2) Fallbacks usuels
-    for candidate in ("invoices_extract.xlsx", "Reporting_invoices.xlsx"):
-        p = (output_dir / candidate).resolve()
-        if p.exists():
-            return p
+    # Sinon, chercher strictement 'invoices_extract.xlsx' dans OUTPUT_DIR
+    p = (output_dir / ALLOWED_EXCEL_NAME).resolve()
+    if p.exists():
+        return p
 
-    # 3) Dernier .xlsx modifié dans OUTPUT_DIR
-    latest = _latest_xlsx_in(output_dir)
-    if latest:
-        return latest.resolve()
-
-    # 4) Rien trouvé
+    # Échec — rien d'autre n'est autorisé
     raise FileNotFoundError(
-        "Aucun fichier Excel (.xlsx) trouvé à envoyer.\n"
+        "Aucun fichier autorisé trouvé à envoyer.\n"
         f"  OUTPUT_DIR: {output_dir}\n"
-        f"  EXCEL_FILE: {preferred_name or '(non défini)'}\n"
-        "💡 Vérifie que le reporting a bien été généré dans OUTPUT_DIR."
+        f"  Requis    : {ALLOWED_EXCEL_NAME}\n"
+        "💡 Vérifie que le reporting a bien été généré avec ce nom exact."
     )
 
+
+# ---------------------------
+# Envoi principal
+# ---------------------------
 
 def send_report(excel_file: Optional[str] = None):
     """
     Envoie le reporting par email en lisant la configuration depuis env.json.
-    Si excel_file n'est pas fourni, on récupère automatiquement le fichier .xlsx dans OUTPUT_DIR :
-      - EXCEL_FILE (env.json) si présent
-      - sinon 'invoices_extract.xlsx'
-      - sinon 'Reporting_invoices.xlsx'
-      - sinon le .xlsx le plus récent dans OUTPUT_DIR
+    ⚠️ Restriction: seule la pièce jointe 'invoices_extract.xlsx' est autorisée.
+    Règles:
+      - Si 'excel_file' est fourni, il doit s'appeler exactement 'invoices_extract.xlsx'.
+      - Sinon, on résout via OUTPUT_DIR et (optionnellement) EXCEL_FILE s'il est conforme.
     Supporte EMAIL_RECIPIENTS, EMAIL_CC, EMAIL_BCC (liste ou chaîne).
     SMTP_SSL (465) par défaut, STARTTLS si SMTP_USE_STARTTLS=true.
     """
     env = load_env_config()
 
-    # Détermination du fichier Excel à joindre
+    # Détermination du fichier Excel à joindre (verrouillé)
     if excel_file:
         excel_path = Path(excel_file).resolve()
+        if excel_path.name != ALLOWED_EXCEL_NAME:
+            raise ConfigError(
+                f"Argument excel_file non autorisé: seul '{ALLOWED_EXCEL_NAME}' peut être envoyé "
+                f"(reçu: '{excel_path.name}')."
+            )
         if not excel_path.exists():
-            # Si le chemin fourni n'existe pas, tente les fallbacks dans OUTPUT_DIR
+            # On retombe sur la résolution stricte depuis l'env
             excel_path = _resolve_excel_path_from_env(env)
     else:
         excel_path = _resolve_excel_path_from_env(env)
